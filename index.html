@@ -105,9 +105,11 @@
       cursor: pointer; user-select: none; transition: transform 0.1s, opacity 0.15s;
     }
     .skill-badge:active, .run-badge:active, .gk-badge:active { transform: scale(0.92); }
-    .skill-1 { background: #3f3f46; color: #d4d4d8; }
-    .skill-2 { background: #065f46; color: #34d399; }
-    .skill-3 { background: #78350f; color: #fbbf24; }
+    .skill-1 { background: #3f3f46; color: #d4d4d8; }       /* Alright - silver */
+    .skill-2 { background: #065f46; color: #34d399; }       /* Decent - green */
+    .skill-3 { background: #1e3a5f; color: #7dd3fc; }       /* Solid - blue */
+    .skill-4 { background: #78350f; color: #fbbf24; }       /* Quality - gold */
+    .pos-badge { background: #3b2f1e; color: #fbbf24; padding: 3px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; }
     .run-badge { background: #1e3a5f; color: #7dd3fc; }
     .run-badge.non { background: #1e293b; color: #94a3b8; }
     .gk-badge { background: #4c1d95; color: #c4b5fd; }
@@ -191,12 +193,20 @@
       <select id="skill">
         <option value="1">Alright</option>
         <option value="2" selected>Decent</option>
-        <option value="3">Quality</option>
+        <option value="3">Solid</option>
+        <option value="4">Quality</option>
       </select>
-      <select id="runner">
-        <option value="Runner" selected>Runner</option>
-        <option value="Non-runner">Non-runner</option>
-      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <select id="position">
+          <option value="Defend">Defend</option>
+          <option value="Attack" selected>Attack</option>
+          <option value="Both">Both</option>
+        </select>
+        <select id="runner">
+          <option value="Runner" selected>Runner</option>
+          <option value="Non-runner">Non-runner</option>
+        </select>
+      </div>
       <div class="gk-row">
         <div class="toggle" id="gkToggle" onclick="toggleGk()"></div>
         <span onclick="toggleGk()">Good goalkeeper</span>
@@ -259,13 +269,20 @@
     try {
       const saved = localStorage.getItem('footballPlayers');
       if (saved) {
-        players = JSON.parse(saved).map(p => ({
-          name: p.name,
-          skill: p.skill || 2,
-          playing: p.playing !== undefined ? p.playing : true,
-          gk: p.gk || false,
-          runner: p.runner || 'Runner'
-        }));
+        players = JSON.parse(saved).map(p => {
+          let skill = p.skill || 2;
+          // migrate old 3-level system: old Quality(3) -> new Quality(4)
+          if (skill === 3 && !p._migrated4) skill = 4;
+          return {
+            name: p.name,
+            skill: skill > 4 ? 4 : skill,
+            playing: p.playing !== undefined ? p.playing : true,
+            gk: p.gk || false,
+            runner: p.runner || 'Runner',
+            position: p.position || 'Attack',
+            _migrated4: true
+          };
+        });
         renderPlayers();
       }
     } catch(e) {}
@@ -289,6 +306,7 @@
       const name = nameInput.value.trim();
       const skill = parseInt(document.getElementById('skill').value);
       const runner = document.getElementById('runner').value;
+      const position = document.getElementById('position').value;
 
       if (!name) { alert('Please enter a name'); nameInput.focus(); return; }
       const duplicate = players.some((p, i) => p.name.toLowerCase() === name.toLowerCase() && i !== editIndex);
@@ -296,11 +314,11 @@
 
       if (editIndex !== null) {
         players[editIndex] = {
-          name, skill, playing: players[editIndex].playing, gk: gkOn, runner
+          name, skill, playing: players[editIndex].playing, gk: gkOn, runner, position
         };
         cancelEdit();
       } else {
-        players.push({ name, skill, playing: true, gk: gkOn, runner });
+        players.push({ name, skill, playing: true, gk: gkOn, runner, position });
         nameInput.value = '';
         nameInput.focus();
       }
@@ -316,6 +334,7 @@
       document.getElementById('name').value = p.name;
       document.getElementById('skill').value = p.skill;
       document.getElementById('runner').value = p.runner || 'Runner';
+      document.getElementById('position').value = p.position || 'Attack';
       gkOn = !!p.gk;
       document.getElementById('gkToggle').classList.toggle('on', gkOn);
       document.getElementById('addBtn').innerHTML = 'Update Player';
@@ -330,6 +349,7 @@
       document.getElementById('name').value = '';
       document.getElementById('skill').value = '2';
       document.getElementById('runner').value = 'Runner';
+      document.getElementById('position').value = 'Attack';
       gkOn = false;
       document.getElementById('gkToggle').classList.remove('on');
       document.getElementById('addBtn').innerHTML = '<span>+</span> Add Player';
@@ -358,7 +378,7 @@
     // ===== BULK / QUICK UPDATES =====
     function cycleSkill(index, event) {
       event.stopPropagation();
-      players[index].skill = players[index].skill === 3 ? 1 : players[index].skill + 1;
+      players[index].skill = players[index].skill >= 4 ? 1 : players[index].skill + 1;
       save(); renderPlayers();
       document.getElementById('result').style.display = 'none';
       showToast(players[index].name + ' → ' + skillLabel(players[index].skill));
@@ -370,6 +390,17 @@
       save(); renderPlayers();
       document.getElementById('result').style.display = 'none';
       showToast(players[index].name + ' → ' + players[index].runner);
+    }
+
+    function cyclePosition(index, event) {
+      event.stopPropagation();
+      const order = ['Defend', 'Attack', 'Both'];
+      const cur = players[index].position || 'Attack';
+      const next = order[(order.indexOf(cur) + 1) % order.length];
+      players[index].position = next;
+      save(); renderPlayers();
+      document.getElementById('result').style.display = 'none';
+      showToast(players[index].name + ' → ' + next);
     }
 
     function toggleGkQuick(index, event) {
@@ -394,7 +425,7 @@
       }
     }
 
-    function skillLabel(s) { return s === 1 ? 'Alright' : s === 2 ? 'Decent' : 'Quality'; }
+    function skillLabel(s) { return s === 1 ? 'Alright' : s === 2 ? 'Decent' : s === 3 ? 'Solid' : 'Quality'; }
     function skillClass(s) { return 'skill-' + s; }
 
     function renderPlayers() {
@@ -424,6 +455,7 @@
             <div class="player-name">${escapeHtml(p.name)}</div>
             <div class="badges">
               <span class="skill-badge ${skillClass(p.skill)}" onclick="cycleSkill(${i}, event)">${skillLabel(p.skill)}</span>
+              <span class="pos-badge" onclick="cyclePosition(${i}, event)">${p.position || 'Attack'}</span>
               <span class="run-badge ${p.runner === 'Non-runner' ? 'non' : ''}" onclick="toggleRunner(${i}, event)">${p.runner === 'Non-runner' ? 'Non-run' : 'Runner'}</span>
               <span class="gk-badge ${p.gk ? '' : 'off'}" onclick="toggleGkQuick(${i}, event)">${p.gk ? 'GK' : 'GK?'}</span>
             </div>
@@ -442,7 +474,7 @@
     function exportPlayers() {
       if (players.length === 0) { alert('No players to export'); return; }
       const text = players.map(p => {
-        const parts = [p.name, skillLabel(p.skill), p.runner || 'Runner'];
+        const parts = [p.name, skillLabel(p.skill), p.position || 'Attack', p.runner || 'Runner'];
         if (p.gk) parts.push('GK');
         return parts.join(' | ');
       }).join('\n');
@@ -507,15 +539,22 @@
         let skill = 2;
         const st = (parts[1] || '').toLowerCase();
         if (st.includes('alright') || st.includes('ok')) skill = 1;
-        else if (st.includes('quality') || st.includes('good')) skill = 3;
+        else if (st.includes('decent')) skill = 2;
+        else if (st.includes('solid')) skill = 3;
+        else if (st.includes('quality') || st.includes('good')) skill = 4;
 
         let runner = 'Runner';
+        let position = 'Attack';
         for (const part of parts) {
           const low = part.toLowerCase();
           if (low.includes('non-runner') || low.includes('non runner') || low.includes('non-run')) runner = 'Non-runner';
+          if (low === 'runner') runner = 'Runner';
+          if (low.includes('both')) position = 'Both';
+          else if (low.includes('defend')) position = 'Defend';
+          else if (low.includes('attack')) position = 'Attack';
         }
         const gk = line.toLowerCase().includes('gk');
-        if (name) imported.push({ name, skill, playing: true, gk, runner });
+        if (name) imported.push({ name, skill, playing: true, gk, runner, position });
       }
       if (imported.length === 0) { alert('Could not read any players'); return; }
       if (players.length > 0 && !confirm(`Replace current ${players.length} players with ${imported.length} imported?`)) return;
@@ -569,7 +608,7 @@
 
       // 3. Special rule: if exactly 1 Quality player, try to put an Alright on the same team
       //    WITHOUT changing team sizes (swap only)
-      const allQuality = [...teamA, ...teamB].filter(p => p.skill === 3);
+      const allQuality = [...teamA, ...teamB].filter(p => p.skill === 4);
       const allAlright = [...teamA, ...teamB].filter(p => p.skill === 1);
 
       if (allQuality.length === 1 && allAlright.length >= 1) {
@@ -660,6 +699,7 @@
                   <span class="pname">${escapeHtml(p.name)}</span>
                   <div class="badges">
                     <span class="skill-badge ${skillClass(p.skill)}">${skillLabel(p.skill)}</span>
+                    <span class="pos-badge">${p.position || 'Attack'}</span>
                     <span class="run-badge ${p.runner === 'Non-runner' ? 'non' : ''}">${p.runner === 'Non-runner' ? 'Non-run' : 'Run'}</span>
                     ${p.gk ? '<span class="gk-badge">GK</span>' : ''}
                   </div>
