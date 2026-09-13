@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Fair Teams</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0b0f1a; color: #e2e8f0; min-height: 100vh;
+      padding: 24px 16px 50px; line-height: 1.45;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container { max-width: 420px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 28px; }
+    .logo {
+      width: 52px; height: 52px; background: #1e1b4b; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px; font-size: 26px;
+    }
+    h1 { font-size: 1.7rem; font-weight: 700; color: #fff; letter-spacing: -0.4px; margin-bottom: 6px; }
+    .subtitle { color: #94a3b8; font-size: 0.92rem; line-height: 1.4; max-width: 280px; margin: 0 auto; }
+    .card {
+      background: #131825; border-radius: 18px; padding: 18px;
+      margin-bottom: 16px; border: 1px solid #1e293b;
+    }
+    .card-title {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.6px;
+      color: #94a3b8; margin-bottom: 14px; text-transform: uppercase;
+    }
+    input, select {
+      width: 100%; padding: 14px 16px; border: none; border-radius: 12px;
+      background: #0f172a; color: #f1f5f9; font-size: 1rem;
+      margin-bottom: 12px; appearance: none;
+    }
+    input::placeholder { color: #64748b; }
+    input:focus, select:focus { outline: none; box-shadow: 0 0 0 2px #6366f1; }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px;
+    }
+    button {
+      border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: transform 0.1s; -webkit-user-select: none; user-select: none;
+    }
+    button:active { transform: scale(0.97); }
+    .btn-add {
+      width: 100%; padding: 15px; background: #6366f1; color: white;
+      font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-make {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; font-size: 1.05rem;
+      display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;
+    }
+    .btn-secondary { flex: 1; padding: 12px; background: #1e293b; color: #e2e8f0; }
+    .btn-ghost { padding: 12px 14px; background: transparent; color: #94a3b8; border: 1px solid #334155; }
+    .btn-small { padding: 7px 12px; font-size: 0.82rem; background: transparent; color: #94a3b8; }
+    .btn-danger-text { color: #f87171 !important; }
+    .gk-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .toggle {
+      width: 46px; height: 26px; background: #1e293b; border-radius: 13px;
+      position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle.on { background: #7c3aed; }
+    .toggle::after {
+      content: ''; position: absolute; width: 20px; height: 20px;
+      background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(20px); }
+    .gk-row span { font-size: 0.92rem; color: #cbd5e1; }
+    .list-stats { font-size: 0.95rem; color: #94a3b8; font-weight: 500; margin-bottom: 8px; }
+    .list-actions { display: flex; gap: 4px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+    .hint { font-size: 0.82rem; color: #64748b; margin-bottom: 10px; }
+    .search-box {
+      width: 100%; padding: 11px 14px; border: none; border-radius: 10px;
+      background: #0f172a; color: #f1f5f9; font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+    .search-box::placeholder { color: #64748b; }
+    .search-box:focus { outline: none; box-shadow: 0 0 0 2px #6366f1; }
+    .player-list { list-style: none; }
+    .player-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; background: #0f172a; border-radius: 12px;
+      margin-bottom: 8px; transition: opacity 0.15s;
+    }
+    .player-item.not-playing { opacity: 0.4; }
+    .check {
+      width: 22px; height: 22px; border-radius: 50%; border: 2px solid #475569;
+      flex-shrink: 0; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; font-size: 12px; color: transparent; transition: all 0.15s;
+    }
+    .check.on { background: #22c55e; border-color: #22c55e; color: white; }
+    .player-info { flex: 1; min-width: 0; }
+    .player-name {
+      font-weight: 600; font-size: 1rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .badges { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+    .skill-badge, .run-badge, .gk-badge {
+      padding: 3px 9px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
+      cursor: pointer; user-select: none; transition: transform 0.1s, opacity 0.15s;
+    }
+    .skill-badge:active, .run-badge:active, .gk-badge:active { transform: scale(0.92); }
+    .skill-1 { background: #3f3f46; color: #d4d4d8; }
+    .skill-2 { background: #065f46; color: #34d399; }
+    .skill-3 { background: #78350f; color: #fbbf24; }
+    .run-badge { background: #1e3a5f; color: #7dd3fc; }
+    .run-badge.non { background: #1e293b; color: #94a3b8; }
+    .gk-badge { background: #4c1d95; color: #c4b5fd; }
+    .gk-badge.off { background: #1e293b; color: #64748b; }
+    .remove-btn {
+      background: none; border: none; color: #64748b; font-size: 1.1rem;
+      padding: 4px 6px; cursor: pointer; line-height: 1;
+    }
+    .remove-btn:hover { color: #f87171; }
+    .teams-label {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.6px;
+      color: #94a3b8; margin-bottom: 12px; text-transform: uppercase;
+    }
+    .team-card {
+      background: #0f172a; border-radius: 16px; padding: 16px;
+      margin-bottom: 12px; border: 1px solid #1e293b;
+    }
+    .team-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+    }
+    .team-title { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 1.05rem; }
+    .team-a .team-title { color: #818cf8; }
+    .team-b .team-title { color: #34d399; }
+    .team-count { font-size: 0.82rem; color: #64748b; }
+    .pts-badge {
+      display: inline-block; padding: 4px 10px; border-radius: 8px;
+      font-size: 0.78rem; font-weight: 700; margin-bottom: 12px;
+    }
+    .team-a .pts-badge { background: #312e81; color: #a5b4fc; }
+    .team-b .pts-badge { background: #064e3b; color: #6ee7b7; }
+    .team-card ul { list-style: none; }
+    .team-card li {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid #1e293b; font-size: 0.92rem; gap: 8px;
+    }
+    .team-card li:last-child { border-bottom: none; }
+    .team-card .pname { font-weight: 600; }
+    .diff { text-align: center; margin-top: 8px; font-size: 0.9rem; color: #a5b4fc; }
+    .empty { text-align: center; color: #475569; padding: 24px 0; font-size: 0.92rem; }
+    .editing-banner {
+      background: #1e1b4b; color: #a5b4fc; font-size: 0.85rem;
+      padding: 8px 12px; border-radius: 10px; margin-bottom: 12px;
+      text-align: center; display: none;
+    }
+    .backup-section { margin-top: 14px; padding-top: 14px; border-top: 1px solid #1e293b; }
+    .backup-section h3 {
+      font-size: 0.75rem; color: #64748b; margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .btn-row { display: flex; gap: 10px; }
+    .hidden { display: none !important; }
+    textarea {
+      width: 100%; padding: 12px; border: none; border-radius: 12px;
+      background: #0f172a; color: #f1f5f9; font-size: 0.9rem;
+      min-height: 90px; margin-bottom: 10px; resize: vertical; font-family: inherit;
+    }
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: #22c55e; color: white; padding: 12px 20px; border-radius: 12px;
+      font-weight: 600; font-size: 0.92rem; z-index: 100;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .quick-hint {
+      font-size: 0.78rem; color: #64748b; margin-top: 8px; text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">🏆</div>
+      <h1>Fair Teams</h1>
+      <p class="subtitle">Add your friends, pick who's playing, and balance the teams.</p>
+    </div>
+
+    <div class="card">
+      <div class="editing-banner" id="editingBanner">Editing player…</div>
+      <div class="card-title">Add Player</div>
+      <input type="text" id="name" placeholder="Player name" autocomplete="off" enterkeyhint="done">
+      <select id="skill">
+        <option value="1">Alright</option>
+        <option value="2" selected>Decent</option>
+        <option value="3">Quality</option>
+      </select>
+      <select id="runner">
+        <option value="Runner" selected>Runner</option>
+        <option value="Non-runner">Non-runner</option>
+      </select>
+      <div class="gk-row">
+        <div class="toggle" id="gkToggle" onclick="toggleGk()"></div>
+        <span onclick="toggleGk()">Good goalkeeper</span>
+      </div>
+      <button class="btn-add" id="addBtn" onclick="addOrUpdatePlayer()">
+        <span>+</span> Add Player
+      </button>
+      <button class="btn-ghost" id="cancelEditBtn" style="display:none; width:100%; margin-top:8px;" onclick="cancelEdit()">Cancel</button>
+    </div>
+
+    <div class="card">
+      <div class="list-stats"><span id="count">0</span> players · <span id="playingNum">0</span> playing</div>
+      <div class="list-actions">
+        <button class="btn-small" onclick="setAll(true)">All in</button>
+        <button class="btn-small" onclick="setAll(false)">None</button>
+        <button class="btn-small btn-danger-text" onclick="clearAll()">Clear All</button>
+      </div>
+      <p class="hint">Tap a player to mark them as playing. Tap badges to change skill / runner / GK.</p>
+      <input type="text" class="search-box" id="searchBox" placeholder="Search players..." oninput="renderPlayers()">
+      <ul class="player-list" id="playerList">
+        <li class="empty">No players yet</li>
+      </ul>
+      <p class="quick-hint">Tip: tap the coloured badges for quick updates</p>
+      <div class="backup-section">
+        <h3>Backup</h3>
+        <div class="btn-row">
+          <button class="btn-secondary" onclick="exportPlayers()">Export</button>
+          <button class="btn-secondary" onclick="showImport()">Import</button>
+        </div>
+        <div id="importArea" class="hidden" style="margin-top:12px;">
+          <textarea id="importText" placeholder="Paste the exported list here..."></textarea>
+          <div class="btn-row">
+            <button class="btn-add" style="padding:12px;" onclick="importPlayers()">Load Players</button>
+            <button class="btn-ghost" onclick="hideImport()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="teamsArea">
+      <button class="btn-make" onclick="makeTeams()">⚡ Make Teams</button>
+      <div class="card" id="result" style="display:none;">
+        <div class="teams-label">Your Teams</div>
+        <div id="teamsContainer"></div>
+        <p class="diff" id="diffText"></p>
+        <div class="btn-row" style="margin-top:12px;">
+          <button class="btn-secondary" onclick="makeTeams(true)">Reshuffle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    let players = [];
+    let editIndex = null;
+    let gkOn = false;
+
+    try {
+      const saved = localStorage.getItem('footballPlayers');
+      if (saved) {
+        players = JSON.parse(saved).map(p => ({
+          name: p.name,
+          skill: p.skill || 2,
+          playing: p.playing !== undefined ? p.playing : true,
+          gk: p.gk || false,
+          runner: p.runner || 'Runner'
+        }));
+        renderPlayers();
+      }
+    } catch(e) {}
+
+    function save() { localStorage.setItem('footballPlayers', JSON.stringify(players)); }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1800);
+    }
+
+    function toggleGk() {
+      gkOn = !gkOn;
+      document.getElementById('gkToggle').classList.toggle('on', gkOn);
+    }
+
+    function addOrUpdatePlayer() {
+      const nameInput = document.getElementById('name');
+      const name = nameInput.value.trim();
+      const skill = parseInt(document.getElementById('skill').value);
+      const runner = document.getElementById('runner').value;
+
+      if (!name) { alert('Please enter a name'); nameInput.focus(); return; }
+      const duplicate = players.some((p, i) => p.name.toLowerCase() === name.toLowerCase() && i !== editIndex);
+      if (duplicate) { alert('That player is already in the list'); nameInput.focus(); return; }
+
+      if (editIndex !== null) {
+        players[editIndex] = {
+          name, skill, playing: players[editIndex].playing, gk: gkOn, runner
+        };
+        cancelEdit();
+      } else {
+        players.push({ name, skill, playing: true, gk: gkOn, runner });
+        nameInput.value = '';
+        nameInput.focus();
+      }
+      gkOn = false;
+      document.getElementById('gkToggle').classList.remove('on');
+      save(); renderPlayers();
+      document.getElementById('result').style.display = 'none';
+    }
+
+    function startEdit(index) {
+      editIndex = index;
+      const p = players[index];
+      document.getElementById('name').value = p.name;
+      document.getElementById('skill').value = p.skill;
+      document.getElementById('runner').value = p.runner || 'Runner';
+      gkOn = !!p.gk;
+      document.getElementById('gkToggle').classList.toggle('on', gkOn);
+      document.getElementById('addBtn').innerHTML = 'Update Player';
+      document.getElementById('cancelEditBtn').style.display = 'block';
+      document.getElementById('editingBanner').style.display = 'block';
+      document.getElementById('name').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+      editIndex = null;
+      document.getElementById('name').value = '';
+      document.getElementById('skill').value = '2';
+      document.getElementById('runner').value = 'Runner';
+      gkOn = false;
+      document.getElementById('gkToggle').classList.remove('on');
+      document.getElementById('addBtn').innerHTML = '<span>+</span> Add Player';
+      document.getElementById('cancelEditBtn').style.display = 'none';
+      document.getElementById('editingBanner').style.display = 'none';
+    }
+
+    document.getElementById('name').addEventListener('keypress', e => {
+      if (e.key === 'Enter') addOrUpdatePlayer();
+    });
+
+    function removePlayer(index) {
+      if (editIndex === index) cancelEdit();
+      else if (editIndex !== null && editIndex > index) editIndex--;
+      players.splice(index, 1);
+      save(); renderPlayers();
+      document.getElementById('result').style.display = 'none';
+    }
+
+    function togglePlaying(index) {
+      players[index].playing = !players[index].playing;
+      save(); renderPlayers();
+      document.getElementById('result').style.display = 'none';
+    }
+
+    // ===== BULK / QUICK UPDATES =====
+    function cycleSkill(index, event) {
+      event.stopPropagation();
+      players[index].skill = players[index].skill === 3 ? 1 : players[index].skill + 1;
+      save(); renderPlayers();
+      document.getElementById('result').style.display = 'none';
+      showToast(players[index].name + ' → ' + skillLabel(players[index].skill));
+    }
+
+    function toggleRunner(index, event) {
+      event.stopPropagation();
+      players[index].runner = players[index].runner === 'Runner' ? 'Non-runner' : 'Runner';
+      save(); renderPlayers();
+      document.getElementById('result').style.display = 'none';
+      showToast(players[index].name + ' → ' + players[index].runner);
+    }
+
+    function toggleGkQuick(index, event) {
+      event.stopPropagation();
+      players[index].gk = !players[index].gk;
+      save(); renderPlayers();
+      document.getElementById('result').style.display = 'none';
+      showToast(players[index].name + (players[index].gk ? ' → GK' : ' → not GK'));
+    }
+
+    function setAll(val) {
+      players.forEach(p => p.playing = val);
+      save(); renderPlayers();
+      document.getElementById('result').style.display = 'none';
+    }
+
+    function clearAll() {
+      if (players.length === 0) return;
+      if (confirm('Remove all players?')) {
+        players = []; cancelEdit(); save(); renderPlayers();
+        document.getElementById('result').style.display = 'none';
+      }
+    }
+
+    function skillLabel(s) { return s === 1 ? 'Alright' : s === 2 ? 'Decent' : 'Quality'; }
+    function skillClass(s) { return 'skill-' + s; }
+
+    function renderPlayers() {
+      const list = document.getElementById('playerList');
+      document.getElementById('count').textContent = players.length;
+      document.getElementById('playingNum').textContent = players.filter(p => p.playing).length;
+
+      if (players.length === 0) {
+        list.innerHTML = '<li class="empty">No players yet</li>';
+        return;
+      }
+
+      const q = (document.getElementById('searchBox')?.value || '').trim().toLowerCase();
+      const filtered = players
+        .map((p, i) => ({ p, i }))
+        .filter(({ p }) => !q || p.name.toLowerCase().includes(q));
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<li class="empty">No players match your search</li>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(({ p, i }) => `
+        <li class="player-item ${p.playing ? '' : 'not-playing'}">
+          <div class="check ${p.playing ? 'on' : ''}" onclick="togglePlaying(${i})">${p.playing ? '✓' : ''}</div>
+          <div class="player-info" onclick="startEdit(${i})">
+            <div class="player-name">${escapeHtml(p.name)}</div>
+            <div class="badges">
+              <span class="skill-badge ${skillClass(p.skill)}" onclick="cycleSkill(${i}, event)">${skillLabel(p.skill)}</span>
+              <span class="run-badge ${p.runner === 'Non-runner' ? 'non' : ''}" onclick="toggleRunner(${i}, event)">${p.runner === 'Non-runner' ? 'Non-run' : 'Runner'}</span>
+              <span class="gk-badge ${p.gk ? '' : 'off'}" onclick="toggleGkQuick(${i}, event)">${p.gk ? 'GK' : 'GK?'}</span>
+            </div>
+          </div>
+          <button class="remove-btn" onclick="removePlayer(${i})">×</button>
+        </li>
+      `).join('');
+    }
+
+    function escapeHtml(t) {
+      const d = document.createElement('div');
+      d.textContent = t;
+      return d.innerHTML;
+    }
+
+    function exportPlayers() {
+      if (players.length === 0) { alert('No players to export'); return; }
+      const text = players.map(p => {
+        const parts = [p.name, skillLabel(p.skill), p.runner || 'Runner'];
+        if (p.gk) parts.push('GK');
+        return parts.join(' | ');
+      }).join('\n');
+
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Copied to clipboard!');
+        }).catch(() => {
+          // Fallback: show the text so user can copy manually
+          showExportFallback(text);
+        });
+      } else {
+        // Older browsers
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          if (ok) {
+            showToast('Copied to clipboard!');
+          } else {
+            showExportFallback(text);
+          }
+        } catch (e) {
+          showExportFallback(text);
+        }
+      }
+    }
+
+    function showExportFallback(text) {
+      // Re-use the import box so the user can see and copy the text
+      document.getElementById('importArea').classList.remove('hidden');
+      const box = document.getElementById('importText');
+      box.value = text;
+      box.focus();
+      box.select();
+      showToast('Select the text and copy it');
+      alert('Clipboard not available.\n\nThe player list is now shown in the box below — select it and copy manually.');
+    }
+
+    function showImport() {
+      document.getElementById('importArea').classList.remove('hidden');
+      document.getElementById('importText').value = '';
+      document.getElementById('importText').focus();
+    }
+    function hideImport() { document.getElementById('importArea').classList.add('hidden'); }
+
+    function importPlayers() {
+      const text = document.getElementById('importText').value.trim();
+      if (!text) { alert('Paste the list first'); return; }
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+      const imported = [];
+      for (const line of lines) {
+        const parts = line.split('|').map(p => p.trim());
+        if (parts.length < 2) continue;
+        const name = parts[0];
+        let skill = 2;
+        const st = (parts[1] || '').toLowerCase();
+        if (st.includes('alright') || st.includes('ok')) skill = 1;
+        else if (st.includes('quality') || st.includes('good')) skill = 3;
+
+        let runner = 'Runner';
+        for (const part of parts) {
+          const low = part.toLowerCase();
+          if (low.includes('non-runner') || low.includes('non runner') || low.includes('non-run')) runner = 'Non-runner';
+        }
+        const gk = line.toLowerCase().includes('gk');
+        if (name) imported.push({ name, skill, playing: true, gk, runner });
+      }
+      if (imported.length === 0) { alert('Could not read any players'); return; }
+      if (players.length > 0 && !confirm(`Replace current ${players.length} players with ${imported.length} imported?`)) return;
+      players = imported; save(); renderPlayers(); hideImport();
+      document.getElementById('result').style.display = 'none';
+      showToast(`Imported ${imported.length} players`);
+    }
+
+    function makeTeams(reshuffle = false) {
+      const available = players.filter(p => p.playing);
+      if (available.length < 2) { alert('Select at least 2 players who are playing'); return; }
+
+      let sorted = [...available].sort((a, b) => b.skill - a.skill);
+      if (reshuffle) sorted = shuffleSameSkill(sorted);
+
+      let teamA = [], teamB = [], sumA = 0, sumB = 0;
+
+      // 1. Normal balanced assignment (skill + GK distribution)
+      const gks = sorted.filter(p => p.gk);
+      const nonGks = sorted.filter(p => !p.gk);
+
+      gks.forEach((p, i) => {
+        if (i % 2 === 0) { teamA.push(p); sumA += p.skill; }
+        else { teamB.push(p); sumB += p.skill; }
+      });
+
+      for (const p of nonGks) {
+        // Prefer the team with fewer players first, then lower skill
+        if (teamA.length < teamB.length || (teamA.length === teamB.length && sumA <= sumB)) {
+          teamA.push(p); sumA += p.skill;
+        } else {
+          teamB.push(p); sumB += p.skill;
+        }
+      }
+
+      // 2. Improvement swaps for better skill balance (keeps sizes the same)
+      let improved = true, safety = 0;
+      while (improved && safety < 50) {
+        improved = false; safety++;
+        for (let i = 0; i < teamA.length; i++) {
+          for (let j = 0; j < teamB.length; j++) {
+            const newA = sumA - teamA[i].skill + teamB[j].skill;
+            const newB = sumB - teamB[j].skill + teamA[i].skill;
+            if (Math.abs(newA - newB) < Math.abs(sumA - sumB)) {
+              [teamA[i], teamB[j]] = [teamB[j], teamA[i]];
+              sumA = newA; sumB = newB; improved = true;
+            }
+          }
+        }
+      }
+
+      // 3. Special rule: if exactly 1 Quality player, try to put an Alright on the same team
+      //    WITHOUT changing team sizes (swap only)
+      const allQuality = [...teamA, ...teamB].filter(p => p.skill === 3);
+      const allAlright = [...teamA, ...teamB].filter(p => p.skill === 1);
+
+      if (allQuality.length === 1 && allAlright.length >= 1) {
+        const quality = allQuality[0];
+        const qualityOnA = teamA.includes(quality);
+
+        // Check if an Alright is already on the same team
+        const sameTeamAlright = (qualityOnA ? teamA : teamB).some(p => p.skill === 1);
+
+        if (!sameTeamAlright) {
+          // Find an Alright on the other team and swap with a non-Alright from Quality's team
+          const otherTeam = qualityOnA ? teamB : teamA;
+          const ownTeam = qualityOnA ? teamA : teamB;
+
+          const alrightIdx = otherTeam.findIndex(p => p.skill === 1);
+          // Prefer swapping a Decent (skill 2) if possible, otherwise any non-Alright
+          let swapIdx = ownTeam.findIndex(p => p.skill === 2 && p !== quality);
+          if (swapIdx === -1) {
+            swapIdx = ownTeam.findIndex(p => p.skill !== 1 && p !== quality);
+          }
+
+          if (alrightIdx !== -1 && swapIdx !== -1) {
+            const temp = ownTeam[swapIdx];
+            ownTeam[swapIdx] = otherTeam[alrightIdx];
+            otherTeam[alrightIdx] = temp;
+
+            // Recalculate sums
+            sumA = teamA.reduce((s, p) => s + p.skill, 0);
+            sumB = teamB.reduce((s, p) => s + p.skill, 0);
+          }
+        }
+      }
+
+      // 4. Balance Runners / Non-runners (swap only, prefer not to worsen skill difference much)
+      function runnerCount(team) {
+        return team.filter(p => p.runner === 'Runner').length;
+      }
+      let runnerImproved = true;
+      let runnerSafety = 0;
+      while (runnerImproved && runnerSafety < 30) {
+        runnerImproved = false;
+        runnerSafety++;
+        const runA = runnerCount(teamA);
+        const runB = runnerCount(teamB);
+        if (Math.abs(runA - runB) <= 1) break; // already balanced enough
+
+        // Team with more runners should give a Runner to the other side in exchange for a Non-runner
+        const rich = runA > runB ? teamA : teamB;
+        const poor = runA > runB ? teamB : teamA;
+
+        for (let i = 0; i < rich.length; i++) {
+          if (rich[i].runner !== 'Runner') continue;
+          for (let j = 0; j < poor.length; j++) {
+            if (poor[j].runner !== 'Non-runner') continue;
+
+            // Only swap if skill difference doesn't get significantly worse
+            const newSumRich = (rich === teamA ? sumA : sumB) - rich[i].skill + poor[j].skill;
+            const newSumPoor = (poor === teamA ? sumA : sumB) - poor[j].skill + rich[i].skill;
+            const oldDiff = Math.abs(sumA - sumB);
+            const newDiff = Math.abs(newSumRich - newSumPoor);
+
+            if (newDiff <= oldDiff + 1) { // allow at most +1 skill difference
+              // perform swap
+              const temp = rich[i];
+              rich[i] = poor[j];
+              poor[j] = temp;
+              sumA = teamA.reduce((s, p) => s + p.skill, 0);
+              sumB = teamB.reduce((s, p) => s + p.skill, 0);
+              runnerImproved = true;
+              break;
+            }
+          }
+          if (runnerImproved) break;
+        }
+      }
+
+      function renderTeam(team, sum, label, cls) {
+        return `
+          <div class="team-card ${cls}">
+            <div class="team-header">
+              <div class="team-title">🛡️ ${label}</div>
+              <div class="team-count">${team.length} players</div>
+            </div>
+            <div class="pts-badge">${sum} pts</div>
+            <ul>
+              ${team.map(p => `
+                <li>
+                  <span class="pname">${escapeHtml(p.name)}</span>
+                  <div class="badges">
+                    <span class="skill-badge ${skillClass(p.skill)}">${skillLabel(p.skill)}</span>
+                    <span class="run-badge ${p.runner === 'Non-runner' ? 'non' : ''}">${p.runner === 'Non-runner' ? 'Non-run' : 'Run'}</span>
+                    ${p.gk ? '<span class="gk-badge">GK</span>' : ''}
+                  </div>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      document.getElementById('teamsContainer').innerHTML =
+        renderTeam(teamA, sumA, 'Team A', 'team-a') +
+        renderTeam(teamB, sumB, 'Team B', 'team-b');
+
+      const diff = Math.abs(sumA - sumB);
+      document.getElementById('diffText').textContent =
+        diff === 0 ? '✨ Perfectly balanced!' : `Skill difference: ${diff} point${diff > 1 ? 's' : ''}`;
+
+      document.getElementById('result').style.display = 'block';
+      if (!reshuffle) document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function shuffleSameSkill(arr) {
+      const result = [...arr];
+      let i = 0;
+      while (i < result.length) {
+        let j = i;
+        while (j < result.length && result[j].skill === result[i].skill) j++;
+        for (let k = j - 1; k > i; k--) {
+          const r = i + Math.floor(Math.random() * (k - i + 1));
+          [result[k], result[r]] = [result[r], result[k]];
+        }
+        i = j;
+      }
+      return result;
+    }
+  </script>
+</body>
+</html>
