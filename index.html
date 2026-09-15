@@ -272,20 +272,27 @@
     try {
       const saved = localStorage.getItem('footballPlayers');
       if (saved) {
-        players = JSON.parse(saved).map(p => {
-          let skill = p.skill || 2;
-          // migrate old 3-level system: old Quality(3) -> new Quality(4)
-          if (skill === 3 && !p._migrated4) skill = 4;
-          return {
-            name: p.name,
-            skill: skill > 4 ? 4 : skill,
-            playing: p.playing !== undefined ? p.playing : true,
-            gk: p.gk || false,
-            runner: p.runner || 'Runner',
-            position: p.position || 'Attack',
-            _migrated4: true
-          };
-        });
+        const raw = JSON.parse(saved);
+        // One-time migration from old 3-level system (Alright/Decent/Quality)
+        // Only runs if nothing is already at level 4 and we haven't migrated before
+        const alreadyMigrated = localStorage.getItem('footballMigrated4') === '1';
+        const hasLevel4 = raw.some(p => p.skill === 4);
+        if (!alreadyMigrated && !hasLevel4) {
+          raw.forEach(p => {
+            if (p.skill === 3) p.skill = 4; // old Quality -> new Quality
+          });
+          localStorage.setItem('footballMigrated4', '1');
+        } else if (!alreadyMigrated) {
+          localStorage.setItem('footballMigrated4', '1');
+        }
+        players = raw.map(p => ({
+          name: p.name,
+          skill: Math.min(4, Math.max(1, parseInt(p.skill) || 2)),
+          playing: p.playing !== undefined ? !!p.playing : true,
+          gk: !!p.gk,
+          runner: p.runner === 'Non-runner' ? 'Non-runner' : 'Runner',
+          position: ['Defend', 'Attack', 'Both'].includes(p.position) ? p.position : 'Attack'
+        }));
         renderPlayers();
       }
     } catch(e) {}
