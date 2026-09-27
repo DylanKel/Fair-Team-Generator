@@ -616,8 +616,8 @@
         }
       }
 
-      // 3. Special rule: if exactly 1 Quality player, try to put an Alright on the same team
-      //    WITHOUT changing team sizes (swap only)
+      // 3a. Special rule: if exactly 1 Quality player, try to put an Alright on the same team
+      //     WITHOUT changing team sizes (swap only)
       const allQuality = [...teamA, ...teamB].filter(p => p.skill === 4);
       const allAlright = [...teamA, ...teamB].filter(p => p.skill === 1);
 
@@ -625,16 +625,13 @@
         const quality = allQuality[0];
         const qualityOnA = teamA.includes(quality);
 
-        // Check if an Alright is already on the same team
         const sameTeamAlright = (qualityOnA ? teamA : teamB).some(p => p.skill === 1);
 
         if (!sameTeamAlright) {
-          // Find an Alright on the other team and swap with a non-Alright from Quality's team
           const otherTeam = qualityOnA ? teamB : teamA;
           const ownTeam = qualityOnA ? teamA : teamB;
 
           const alrightIdx = otherTeam.findIndex(p => p.skill === 1);
-          // Prefer swapping a Decent (skill 2) if possible, otherwise any non-Alright
           let swapIdx = ownTeam.findIndex(p => p.skill === 2 && p !== quality);
           if (swapIdx === -1) {
             swapIdx = ownTeam.findIndex(p => p.skill !== 1 && p !== quality);
@@ -644,11 +641,53 @@
             const temp = ownTeam[swapIdx];
             ownTeam[swapIdx] = otherTeam[alrightIdx];
             otherTeam[alrightIdx] = temp;
-
-            // Recalculate sums
             sumA = teamA.reduce((s, p) => s + p.skill, 0);
             sumB = teamB.reduce((s, p) => s + p.skill, 0);
           }
+        }
+      }
+
+      // 3b. Spread Quality players: if 2+ Quality on the same team, move extras across
+      //     Prefer not to worsen skill difference by more than 1
+      {
+        const qOnA = teamA.filter(p => p.skill === 4);
+        const qOnB = teamB.filter(p => p.skill === 4);
+        // While one team has 2+ more Quality than the other, swap a Quality out
+        let qSafety = 0;
+        while (qSafety < 10) {
+          qSafety++;
+          const qa = teamA.filter(p => p.skill === 4).length;
+          const qb = teamB.filter(p => p.skill === 4).length;
+          if (Math.abs(qa - qb) <= 1) break; // already as even as possible
+
+          const rich = qa > qb ? teamA : teamB;
+          const poor = qa > qb ? teamB : teamA;
+          let swapped = false;
+          for (let i = 0; i < rich.length && !swapped; i++) {
+            if (rich[i].skill !== 4) continue;
+            // Prefer swap with Solid (3) or Decent (2) on the poor team
+            for (const prefer of [3, 2, 1]) {
+              for (let j = 0; j < poor.length; j++) {
+                if (poor[j].skill !== prefer) continue;
+                const richIsA = rich === teamA;
+                const sumRich = richIsA ? sumA : sumB;
+                const sumPoor = richIsA ? sumB : sumA;
+                const newRich = sumRich - rich[i].skill + poor[j].skill;
+                const newPoor = sumPoor - poor[j].skill + rich[i].skill;
+                if (Math.abs(newRich - newPoor) <= Math.abs(sumA - sumB) + 1) {
+                  const t = rich[i];
+                  rich[i] = poor[j];
+                  poor[j] = t;
+                  sumA = teamA.reduce((s, p) => s + p.skill, 0);
+                  sumB = teamB.reduce((s, p) => s + p.skill, 0);
+                  swapped = true;
+                  break;
+                }
+              }
+              if (swapped) break;
+            }
+          }
+          if (!swapped) break;
         }
       }
 
@@ -695,6 +734,7 @@
         }
       }
 
+      
       function renderTeam(team, sum, label, cls) {
         return `
           <div class="team-card ${cls}">
