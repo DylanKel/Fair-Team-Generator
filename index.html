@@ -582,17 +582,42 @@
 
       let teamA = [], teamB = [], sumA = 0, sumB = 0;
 
-      // 1. Normal balanced assignment (skill + GK distribution)
-      const gks = sorted.filter(p => p.gk);
-      const nonGks = sorted.filter(p => !p.gk);
+      // 1. Assign Quality players first (spread them), then GKs, then the rest
+      const qualities = sorted.filter(p => p.skill === 4);
+      const gks = sorted.filter(p => p.gk && p.skill !== 4);
+      const rest = sorted.filter(p => p.skill !== 4 && !p.gk);
 
-      gks.forEach((p, i) => {
+      // Spread Quality across teams
+      if (reshuffle) {
+        for (let i = qualities.length - 1; i > 0; i--) {
+          const r = Math.floor(Math.random() * (i + 1));
+          [qualities[i], qualities[r]] = [qualities[r], qualities[i]];
+        }
+      }
+      qualities.forEach((p, i) => {
         if (i % 2 === 0) { teamA.push(p); sumA += p.skill; }
         else { teamB.push(p); sumB += p.skill; }
       });
 
-      for (const p of nonGks) {
-        // Prefer the team with fewer players first, then lower skill
+      // Spread remaining GKs
+      if (reshuffle) {
+        for (let i = gks.length - 1; i > 0; i--) {
+          const r = Math.floor(Math.random() * (i + 1));
+          [gks[i], gks[r]] = [gks[r], gks[i]];
+        }
+      }
+      gks.forEach((p, i) => {
+        // put on team with fewer GKs so far, then fewer players / lower skill
+        const gkA = teamA.filter(x => x.gk).length;
+        const gkB = teamB.filter(x => x.gk).length;
+        if (gkA < gkB || (gkA === gkB && (teamA.length < teamB.length || (teamA.length === teamB.length && sumA <= sumB)))) {
+          teamA.push(p); sumA += p.skill;
+        } else {
+          teamB.push(p); sumB += p.skill;
+        }
+      });
+
+      for (const p of rest) {
         if (teamA.length < teamB.length || (teamA.length === teamB.length && sumA <= sumB)) {
           teamA.push(p); sumA += p.skill;
         } else {
@@ -600,12 +625,21 @@
         }
       }
 
-      // 2. Improvement swaps for better skill balance (keeps sizes the same)
+      // 2. Improvement swaps for skill — but NEVER move a Quality onto a team that already has more/equal Quality if it would un-split them
+      function qualityCount(team) { return team.filter(p => p.skill === 4).length; }
       let improved = true, safety = 0;
       while (improved && safety < 50) {
         improved = false; safety++;
         for (let i = 0; i < teamA.length; i++) {
           for (let j = 0; j < teamB.length; j++) {
+            const aIsQ = teamA[i].skill === 4;
+            const bIsQ = teamB[j].skill === 4;
+            // Block swaps that stack Quality on one team
+            if (aIsQ && !bIsQ && qualityCount(teamB) === 0 && qualityCount(teamA) >= 1) continue;
+            if (bIsQ && !aIsQ && qualityCount(teamA) === 0 && qualityCount(teamB) >= 1) continue;
+            if (aIsQ && !bIsQ && qualityCount(teamB) >= qualityCount(teamA)) continue;
+            if (bIsQ && !aIsQ && qualityCount(teamA) >= qualityCount(teamB)) continue;
+
             const newA = sumA - teamA[i].skill + teamB[j].skill;
             const newB = sumB - teamB[j].skill + teamA[i].skill;
             if (Math.abs(newA - newB) < Math.abs(sumA - sumB)) {
@@ -616,27 +650,20 @@
         }
       }
 
-      // 3a. Special rule: if exactly 1 Quality player, try to put an Alright on the same team
-      //     WITHOUT changing team sizes (swap only)
+      // 3a. Special rule: exactly 1 Quality → try put an Alright with them
       const allQuality = [...teamA, ...teamB].filter(p => p.skill === 4);
       const allAlright = [...teamA, ...teamB].filter(p => p.skill === 1);
 
       if (allQuality.length === 1 && allAlright.length >= 1) {
         const quality = allQuality[0];
         const qualityOnA = teamA.includes(quality);
-
         const sameTeamAlright = (qualityOnA ? teamA : teamB).some(p => p.skill === 1);
-
         if (!sameTeamAlright) {
           const otherTeam = qualityOnA ? teamB : teamA;
           const ownTeam = qualityOnA ? teamA : teamB;
-
           const alrightIdx = otherTeam.findIndex(p => p.skill === 1);
           let swapIdx = ownTeam.findIndex(p => p.skill === 2 && p !== quality);
-          if (swapIdx === -1) {
-            swapIdx = ownTeam.findIndex(p => p.skill !== 1 && p !== quality);
-          }
-
+          if (swapIdx === -1) swapIdx = ownTeam.findIndex(p => p.skill !== 1 && p !== quality);
           if (alrightIdx !== -1 && swapIdx !== -1) {
             const temp = ownTeam[swapIdx];
             ownTeam[swapIdx] = otherTeam[alrightIdx];
@@ -647,42 +674,30 @@
         }
       }
 
-      // 3b. Spread Quality players: if 2+ Quality on the same team, move extras across
-      //     Prefer not to worsen skill difference by more than 1
+      // 3b. Final Quality spread — force split if one team has 2+ more Quality
       {
-        const qOnA = teamA.filter(p => p.skill === 4);
-        const qOnB = teamB.filter(p => p.skill === 4);
-        // While one team has 2+ more Quality than the other, swap a Quality out
         let qSafety = 0;
-        while (qSafety < 10) {
+        while (qSafety < 12) {
           qSafety++;
-          const qa = teamA.filter(p => p.skill === 4).length;
-          const qb = teamB.filter(p => p.skill === 4).length;
-          if (Math.abs(qa - qb) <= 1) break; // already as even as possible
-
+          const qa = qualityCount(teamA);
+          const qb = qualityCount(teamB);
+          if (Math.abs(qa - qb) <= 1) break;
           const rich = qa > qb ? teamA : teamB;
           const poor = qa > qb ? teamB : teamA;
           let swapped = false;
           for (let i = 0; i < rich.length && !swapped; i++) {
             if (rich[i].skill !== 4) continue;
-            // Prefer swap with Solid (3) or Decent (2) on the poor team
-            for (const prefer of [3, 2, 1]) {
+            for (const prefer of [3, 2, 1, 4]) {
               for (let j = 0; j < poor.length; j++) {
                 if (poor[j].skill !== prefer) continue;
-                const richIsA = rich === teamA;
-                const sumRich = richIsA ? sumA : sumB;
-                const sumPoor = richIsA ? sumB : sumA;
-                const newRich = sumRich - rich[i].skill + poor[j].skill;
-                const newPoor = sumPoor - poor[j].skill + rich[i].skill;
-                if (Math.abs(newRich - newPoor) <= Math.abs(sumA - sumB) + 1) {
-                  const t = rich[i];
-                  rich[i] = poor[j];
-                  poor[j] = t;
-                  sumA = teamA.reduce((s, p) => s + p.skill, 0);
-                  sumB = teamB.reduce((s, p) => s + p.skill, 0);
-                  swapped = true;
-                  break;
-                }
+                if (prefer === 4) continue; // don't swap Quality for Quality
+                const t = rich[i];
+                rich[i] = poor[j];
+                poor[j] = t;
+                sumA = teamA.reduce((s, p) => s + p.skill, 0);
+                sumB = teamB.reduce((s, p) => s + p.skill, 0);
+                swapped = true;
+                break;
               }
               if (swapped) break;
             }
@@ -691,7 +706,7 @@
         }
       }
 
-      // 4. Balance Runners / Non-runners (swap only, prefer not to worsen skill difference much)
+      // 4. Balance Runners — do not undo Quality split
       function runnerCount(team) {
         return team.filter(p => p.runner === 'Runner').length;
       }
@@ -702,9 +717,8 @@
         runnerSafety++;
         const runA = runnerCount(teamA);
         const runB = runnerCount(teamB);
-        if (Math.abs(runA - runB) <= 1) break; // already balanced enough
+        if (Math.abs(runA - runB) <= 1) break;
 
-        // Team with more runners should give a Runner to the other side in exchange for a Non-runner
         const rich = runA > runB ? teamA : teamB;
         const poor = runA > runB ? teamB : teamA;
 
@@ -713,14 +727,33 @@
           for (let j = 0; j < poor.length; j++) {
             if (poor[j].runner !== 'Non-runner') continue;
 
-            // Only swap if skill difference doesn't get significantly worse
+            // Block if this would stack Quality
+            const richIsQ = rich[i].skill === 4;
+            const poorIsQ = poor[j].skill === 4;
+            if (richIsQ && !poorIsQ) {
+              const qa = qualityCount(teamA);
+              const qb = qualityCount(teamB);
+              const richIsA = rich === teamA;
+              // after swap, rich loses a Q, poor gains a Q
+              const newQa = richIsA ? qa - 1 : qa + 1;
+              const newQb = richIsA ? qb + 1 : qb - 1;
+              if (Math.abs(newQa - newQb) > Math.abs(qa - qb)) continue;
+            }
+            if (poorIsQ && !richIsQ) {
+              const qa = qualityCount(teamA);
+              const qb = qualityCount(teamB);
+              const richIsA = rich === teamA;
+              const newQa = richIsA ? qa + 1 : qa - 1;
+              const newQb = richIsA ? qb - 1 : qb + 1;
+              if (Math.abs(newQa - newQb) > Math.abs(qa - qb)) continue;
+            }
+
             const newSumRich = (rich === teamA ? sumA : sumB) - rich[i].skill + poor[j].skill;
             const newSumPoor = (poor === teamA ? sumA : sumB) - poor[j].skill + rich[i].skill;
             const oldDiff = Math.abs(sumA - sumB);
             const newDiff = Math.abs(newSumRich - newSumPoor);
 
-            if (newDiff <= oldDiff + 1) { // allow at most +1 skill difference
-              // perform swap
+            if (newDiff <= oldDiff + 1) {
               const temp = rich[i];
               rich[i] = poor[j];
               poor[j] = temp;
@@ -734,7 +767,34 @@
         }
       }
 
-      
+      // 5. Final hard Quality split (last word)
+      {
+        let qSafety = 0;
+        while (qSafety < 12) {
+          qSafety++;
+          const qa = qualityCount(teamA);
+          const qb = qualityCount(teamB);
+          if (Math.abs(qa - qb) <= 1) break;
+          const rich = qa > qb ? teamA : teamB;
+          const poor = qa > qb ? teamB : teamA;
+          let swapped = false;
+          for (let i = 0; i < rich.length && !swapped; i++) {
+            if (rich[i].skill !== 4) continue;
+            for (let j = 0; j < poor.length; j++) {
+              if (poor[j].skill === 4) continue;
+              const t = rich[i];
+              rich[i] = poor[j];
+              poor[j] = t;
+              sumA = teamA.reduce((s, p) => s + p.skill, 0);
+              sumB = teamB.reduce((s, p) => s + p.skill, 0);
+              swapped = true;
+              break;
+            }
+          }
+          if (!swapped) break;
+        }
+      }
+
       function renderTeam(team, sum, label, cls) {
         return `
           <div class="team-card ${cls}">
@@ -742,17 +802,10 @@
               <div class="team-title">🛡️ ${label}</div>
               <div class="team-count">${team.length} players</div>
             </div>
-            <div class="pts-badge">${sum} pts</div>
             <ul>
               ${team.map(p => `
                 <li>
                   <span class="pname">${escapeHtml(p.name)}</span>
-                  <div class="badges">
-                    <span class="skill-badge ${skillClass(p.skill)}">${skillLabel(p.skill)}</span>
-                    <span class="pos-badge">${p.position || 'Attack'}</span>
-                    <span class="run-badge ${p.runner === 'Non-runner' ? 'non' : ''}">${p.runner === 'Non-runner' ? 'Non-run' : 'Run'}</span>
-                    ${p.gk ? '<span class="gk-badge">GK</span>' : ''}
-                  </div>
                 </li>
               `).join('')}
             </ul>
