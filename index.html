@@ -180,6 +180,36 @@
     .team-card li:last-child { border-bottom: none; }
     .team-card .pname { font-weight: 600; }
     .diff { text-align: center; margin-top: 8px; font-size: 0.9rem; color: #a5b4fc; }
+    .edge-note {
+      text-align: center; margin-top: 4px; font-size: 0.85rem;
+      color: #fbbf24; font-weight: 500;
+    }
+    .swap-hint {
+      text-align: center; font-size: 0.78rem; color: #64748b;
+      margin: 8px 0 4px;
+    }
+    .team-card li.swap-selected {
+      background: #312e81;
+      outline: 2px solid #818cf8;
+    }
+    .team-card li { cursor: pointer; border-radius: 8px; transition: background 0.15s; }
+    .team-card li:active { background: #1e293b; }
+    .sort-row {
+      display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .sort-row label {
+      font-size: 0.78rem; color: #64748b; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.4px; margin: 0;
+    }
+    .sort-row select {
+      width: auto; min-width: 140px; margin-bottom: 0;
+      padding: 8px 32px 8px 12px; font-size: 0.88rem;
+    }
+    .btn-share {
+      flex: 1; padding: 12px; background: #0d9488; color: white; border: none;
+      border-radius: 12px; font-size: 0.95rem; font-weight: 600;
+    }
+
     .empty { text-align: center; color: #475569; padding: 24px 0; font-size: 0.92rem; }
     .editing-banner {
       background: #1e1b4b; color: #a5b4fc; font-size: 0.85rem;
@@ -340,6 +370,15 @@
         <button class="btn-small" onclick="setAll(false)">None</button>
         <button class="btn-small btn-danger-text" onclick="clearAll()">Clear All</button>
       </div>
+      <div class="sort-row">
+        <label for="sortBy">Sort</label>
+        <select id="sortBy" onchange="renderPlayers()">
+          <option value="name">Name A–Z</option>
+          <option value="skill-desc" selected>Skill (high → low)</option>
+          <option value="skill-asc">Skill (low → high)</option>
+          <option value="playing">Playing first</option>
+        </select>
+      </div>
       <p class="hint">Tap a player to mark them as playing. Tap badges to change skill / runner / GK.</p>
       <input type="text" class="search-box" id="searchBox" placeholder="Search players..." oninput="renderPlayers()">
       <ul class="player-list" id="playerList">
@@ -366,10 +405,13 @@
       <button class="btn-make" onclick="makeTeams()">⚡ Make Teams</button>
       <div class="card" id="result" style="display:none;">
         <div class="teams-label">Your Teams</div>
+        <p class="swap-hint" id="swapHint">Tap a name on each team to swap them</p>
         <div id="teamsContainer"></div>
         <p class="diff" id="diffText"></p>
+        <p class="edge-note" id="edgeNote"></p>
         <div class="btn-row" style="margin-top:12px;">
           <button class="btn-secondary" onclick="makeTeams(true)">Reshuffle</button>
+          <button class="btn-share" onclick="shareTeams()">Share</button>
         </div>
       </div>
     </div>
@@ -381,6 +423,11 @@
     let players = [];
     let editIndex = null;
     let gkOn = false;
+    let currentTeamA = [];
+    let currentTeamB = [];
+    let currentSumA = 0;
+    let currentSumB = 0;
+    let swapPick = null; // { side: 'A'|'B', index: number }
 
     try {
       const saved = localStorage.getItem('footballPlayers');
@@ -562,9 +609,20 @@
       }
 
       const q = (document.getElementById('searchBox')?.value || '').trim().toLowerCase();
-      const filtered = players
-        .map((p, i) => ({ p, i }))
-        .filter(({ p }) => !q || p.name.toLowerCase().includes(q));
+      const sortBy = document.getElementById('sortBy')?.value || 'skill-desc';
+      let indexed = players.map((p, i) => ({ p, i }));
+      indexed = indexed.filter(({ p }) => !q || p.name.toLowerCase().includes(q));
+      indexed.sort((a, b) => {
+        if (sortBy === 'name') return a.p.name.localeCompare(b.p.name);
+        if (sortBy === 'skill-desc') return b.p.skill - a.p.skill || a.p.name.localeCompare(b.p.name);
+        if (sortBy === 'skill-asc') return a.p.skill - b.p.skill || a.p.name.localeCompare(b.p.name);
+        if (sortBy === 'playing') {
+          if (a.p.playing !== b.p.playing) return a.p.playing ? -1 : 1;
+          return b.p.skill - a.p.skill || a.p.name.localeCompare(b.p.name);
+        }
+        return 0;
+      });
+      const filtered = indexed;
 
       if (filtered.length === 0) {
         list.innerHTML = '<li class="empty">No players match your search</li>';
@@ -908,7 +966,30 @@
         }
       }
 
-      function renderTeam(team, sum, label, cls) {
+      // Store for swap / share
+      currentTeamA = teamA;
+      currentTeamB = teamB;
+      currentSumA = sumA;
+      currentSumB = sumB;
+      swapPick = null;
+
+      renderTeamsUI();
+
+      document.getElementById('result').style.display = 'block';
+      if (!reshuffle) document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function edgeMessage(sumA, sumB) {
+      const diff = Math.abs(sumA - sumB);
+      if (diff === 0) return 'Evenly matched';
+      const stronger = sumA > sumB ? 'Team A' : 'Team B';
+      if (diff === 1) return stronger + ' has a slight edge';
+      if (diff <= 3) return stronger + ' looks a bit stronger';
+      return stronger + ' looks clearly stronger — try Reshuffle or swap';
+    }
+
+    function renderTeamsUI() {
+      function renderTeam(team, label, cls, side) {
         return `
           <div class="team-card ${cls}">
             <div class="team-header">
@@ -916,8 +997,9 @@
               <div class="team-count">${team.length} players</div>
             </div>
             <ul>
-              ${team.map(p => `
-                <li>
+              ${team.map((p, idx) => `
+                <li class="${swapPick && swapPick.side === side && swapPick.index === idx ? 'swap-selected' : ''}"
+                    onclick="pickSwap('${side}', ${idx})">
                   <span class="pname">${escapeHtml(p.name)}</span>
                 </li>
               `).join('')}
@@ -927,15 +1009,239 @@
       }
 
       document.getElementById('teamsContainer').innerHTML =
-        renderTeam(teamA, sumA, 'Team A', 'team-a') +
-        renderTeam(teamB, sumB, 'Team B', 'team-b');
+        renderTeam(currentTeamA, 'Team A', 'team-a', 'A') +
+        renderTeam(currentTeamB, 'Team B', 'team-b', 'B');
 
-      const diff = Math.abs(sumA - sumB);
+      const diff = Math.abs(currentSumA - currentSumB);
       document.getElementById('diffText').textContent =
         diff === 0 ? '✨ Perfectly balanced!' : `Skill difference: ${diff} point${diff > 1 ? 's' : ''}`;
+      document.getElementById('edgeNote').textContent = edgeMessage(currentSumA, currentSumB);
 
-      document.getElementById('result').style.display = 'block';
-      if (!reshuffle) document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const hint = document.getElementById('swapHint');
+      if (swapPick) {
+        const team = swapPick.side === 'A' ? currentTeamA : currentTeamB;
+        hint.textContent = 'Selected ' + team[swapPick.index].name + ' — tap someone on the other team to swap';
+      } else {
+        hint.textContent = 'Tap a name on each team to swap them';
+      }
+    }
+
+    function pickSwap(side, index) {
+      if (!swapPick) {
+        swapPick = { side, index };
+        renderTeamsUI();
+        return;
+      }
+      // Same side: change selection
+      if (swapPick.side === side) {
+        swapPick = { side, index };
+        renderTeamsUI();
+        return;
+      }
+      // Different sides: swap
+      const teamFrom = swapPick.side === 'A' ? currentTeamA : currentTeamB;
+      const teamTo = side === 'A' ? currentTeamA : currentTeamB;
+      const i = swapPick.index;
+      const j = index;
+      const temp = teamFrom[i];
+      teamFrom[i] = teamTo[j];
+      teamTo[j] = temp;
+      currentSumA = currentTeamA.reduce((s, p) => s + p.skill, 0);
+      currentSumB = currentTeamB.reduce((s, p) => s + p.skill, 0);
+      swapPick = null;
+      renderTeamsUI();
+      showToast('Swapped');
+    }
+
+    function buildShareText() {
+      const lines = [];
+      lines.push('⚽ Fair Teams');
+      lines.push('');
+      lines.push('━━ Team A (' + currentTeamA.length + ') ━━');
+      currentTeamA.forEach(p => lines.push('  ' + p.name));
+      lines.push('');
+      lines.push('━━ Team B (' + currentTeamB.length + ') ━━');
+      currentTeamB.forEach(p => lines.push('  ' + p.name));
+      const diff = Math.abs(currentSumA - currentSumB);
+      lines.push('');
+      lines.push(diff === 0 ? '✨ Perfectly balanced' : edgeMessage(currentSumA, currentSumB));
+      return lines.join('\n');
+    }
+
+    function drawTeamsImage() {
+      const pad = 28;
+      const colGap = 20;
+      const headerH = 72;
+      const rowH = 36;
+      const footerH = 48;
+      const maxRows = Math.max(currentTeamA.length, currentTeamB.length, 1);
+      const cardW = 280;
+      const cardH = 56 + maxRows * rowH + 20;
+      const W = pad * 2 + cardW * 2 + colGap;
+      const H = pad * 2 + headerH + cardH + footerH;
+
+      const canvas = document.createElement('canvas');
+      const scale = 2; // sharp on phones
+      canvas.width = W * scale;
+      canvas.height = H * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+
+      // Background
+      ctx.fillStyle = '#0b0f1a';
+      ctx.fillRect(0, 0, W, H);
+
+      // Title
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 22px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Fair Teams', W / 2, pad + 28);
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '500 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+      ctx.fillText('Balanced sides', W / 2, pad + 50);
+
+      function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      function drawCard(x, y, team, title, titleColor) {
+        // Card bg
+        ctx.fillStyle = '#0f172a';
+        roundRect(x, y, cardW, cardH, 16);
+        ctx.fill();
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Title
+        ctx.textAlign = 'left';
+        ctx.fillStyle = titleColor;
+        ctx.font = '700 17px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+        ctx.fillText(title, x + 18, y + 28);
+
+        // Count
+        ctx.fillStyle = '#64748b';
+        ctx.font = '500 12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+        ctx.fillText(team.length + ' players', x + 18, y + 48);
+
+        // Names
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '600 15px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+        team.forEach((p, i) => {
+          const ny = y + 68 + i * rowH;
+          // divider
+          if (i > 0) {
+            ctx.strokeStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.moveTo(x + 16, ny - 12);
+            ctx.lineTo(x + cardW - 16, ny - 12);
+            ctx.stroke();
+          }
+          ctx.fillStyle = '#e2e8f0';
+          ctx.fillText(p.name, x + 18, ny);
+        });
+      }
+
+      const cardsY = pad + headerH;
+      drawCard(pad, cardsY, currentTeamA, 'Team A', '#818cf8');
+      drawCard(pad + cardW + colGap, cardsY, currentTeamB, 'Team B', '#34d399');
+
+      // Footer edge note
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#a5b4fc';
+      ctx.font = '500 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+      const diff = Math.abs(currentSumA - currentSumB);
+      const footer = diff === 0 ? '✨ Perfectly balanced' : edgeMessage(currentSumA, currentSumB);
+      ctx.fillText(footer, W / 2, H - pad - 12);
+
+      return canvas;
+    }
+
+    async function shareTeams() {
+      if (!currentTeamA.length && !currentTeamB.length) {
+        alert('Make teams first');
+        return;
+      }
+
+      const text = buildShareText();
+      const canvas = drawTeamsImage();
+
+      // Try share image (looks like the app)
+      try {
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob failed')), 'image/png');
+        });
+        const file = new File([blob], 'fair-teams.png', { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Fair Teams',
+            text: 'Team A vs Team B'
+          });
+          showToast('Shared');
+          return;
+        }
+
+        if (navigator.share) {
+          // Some phones share image via share without canShare check
+          try {
+            await navigator.share({ files: [file], title: 'Fair Teams' });
+            showToast('Shared');
+            return;
+          } catch (e) {
+            if (e && e.name === 'AbortError') return;
+          }
+        }
+      } catch (e) {
+        // fall through to text / download
+      }
+
+      // Fallback: download image + copy text
+      try {
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'fair-teams.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Image saved — share it in WhatsApp');
+      } catch (e) {}
+
+      copyShare(text);
+    }
+
+    function copyShare(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Text copied too');
+        }).catch(() => fallbackShare(text));
+      } else {
+        fallbackShare(text);
+      }
+    }
+
+    function fallbackShare(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Text copied');
+      } catch (e) {
+        alert(text);
+      }
+      document.body.removeChild(ta);
     }
 
     function shuffleSameSkill(arr) {
