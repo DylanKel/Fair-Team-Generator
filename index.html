@@ -8,320 +8,407 @@
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231e1b4b'/%3E%3Ctext y='72' x='50' text-anchor='middle' font-size='60'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E">
 
   <style>
+    :root {
+      --bg: #080b14;
+      --surface: #121826;
+      --surface-2: #0c1220;
+      --border: #1c2536;
+      --border-soft: #243044;
+      --text: #e8eef7;
+      --muted: #8b9bb4;
+      --faint: #5c6b82;
+      --accent: #6d74f5;
+      --accent-2: #8b5cf6;
+      --team-a: #8b93ff;
+      --team-b: #3ecf8e;
+      --danger: #f87171;
+      --radius: 16px;
+      --radius-sm: 12px;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #0b0f1a; color: #e2e8f0; min-height: 100vh;
-      padding: 20px 14px 48px; line-height: 1.45;
+      background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.12), transparent);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px 16px 56px;
+      line-height: 1.45;
       -webkit-tap-highlight-color: transparent;
     }
-    .container {
-      max-width: 440px;
-      margin: 0 auto;
-      width: 100%;
-    }
-    #teamsContainer {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      align-items: start;
-    }
-    @media (max-width: 340px) {
-      #teamsContainer { grid-template-columns: 1fr; }
-    }
-    .header { text-align: center; margin-bottom: 28px; }
+    .container { max-width: 440px; margin: 0 auto; width: 100%; }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 24px; }
     .logo {
-      width: 52px; height: 52px; background: #1e1b4b; border-radius: 14px;
+      width: 56px; height: 56px;
+      background: linear-gradient(145deg, #1e1b4b, #312e81);
+      border-radius: 16px;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 14px; font-size: 26px;
+      margin: 0 auto 12px; font-size: 28px;
+      border: 1px solid rgba(129, 140, 248, 0.25);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
-    h1 { font-size: 1.7rem; font-weight: 700; color: #fff; letter-spacing: -0.4px; margin-bottom: 6px; }
-    .subtitle { color: #94a3b8; font-size: 0.92rem; line-height: 1.4; max-width: 280px; margin: 0 auto; }
+    h1 {
+      font-size: 1.65rem; font-weight: 750; color: #fff;
+      letter-spacing: -0.5px; margin-bottom: 6px;
+    }
+    .subtitle {
+      color: var(--muted); font-size: 0.9rem; line-height: 1.45;
+      max-width: 300px; margin: 0 auto;
+    }
+
+    /* Cards */
     .card {
-      background: #131825; border-radius: 18px; padding: 18px;
-      margin-bottom: 16px; border: 1px solid #1e293b;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     }
-    .card-title {
-      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.6px;
-      color: #94a3b8; margin-bottom: 14px; text-transform: uppercase;
+    .card-title, .teams-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.8px;
+      color: var(--faint); margin-bottom: 14px; text-transform: uppercase;
     }
+
+    /* Form */
     input, select {
-      width: 100%; padding: 14px 16px; border: none; border-radius: 12px;
-      background: #0f172a; color: #f1f5f9; font-size: 1rem;
-      margin-bottom: 12px; appearance: none;
+      width: 100%; padding: 13px 15px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2); color: var(--text); font-size: 1rem;
+      margin-bottom: 10px; appearance: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    input::placeholder { color: #64748b; }
-    input:focus, select:focus { outline: none; box-shadow: 0 0 0 2px #6366f1; }
+    input::placeholder { color: var(--faint); }
+    input:focus, select:focus {
+      outline: none;
+      border-color: rgba(109, 116, 245, 0.55);
+      box-shadow: 0 0 0 3px rgba(109, 116, 245, 0.15);
+    }
     select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b9bb4' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px;
     }
+
+    /* Buttons */
     button {
-      border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 600;
-      cursor: pointer; transition: transform 0.1s; -webkit-user-select: none; user-select: none;
+      border: none; border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: transform 0.1s, opacity 0.15s, background 0.15s;
+      -webkit-user-select: none; user-select: none;
     }
-    button:active { transform: scale(0.97); }
+    button:active { transform: scale(0.98); }
     .btn-add {
-      width: 100%; padding: 15px; background: #6366f1; color: white;
-      font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px;
+      background: var(--accent); color: white;
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 14px rgba(109, 116, 245, 0.3);
     }
     .btn-make {
       width: 100%; padding: 15px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: linear-gradient(135deg, #6366f1, #7c3aed);
       color: white; font-size: 1.05rem;
-      display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-bottom: 14px;
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+      border-radius: 14px;
     }
-    .btn-secondary { flex: 1; padding: 12px; background: #1e293b; color: #e2e8f0; }
-    .btn-ghost { padding: 12px 14px; background: transparent; color: #94a3b8; border: 1px solid #334155; }
-    .btn-small { padding: 7px 12px; font-size: 0.82rem; background: transparent; color: #94a3b8; }
-    .btn-danger-text { color: #f87171 !important; }
-    .gk-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .btn-secondary {
+      flex: 1; padding: 12px;
+      background: var(--surface-2); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost {
+      padding: 12px 14px; background: transparent; color: var(--muted);
+      border: 1px solid var(--border-soft);
+    }
+    .btn-small {
+      padding: 7px 12px; font-size: 0.8rem;
+      background: var(--surface-2); color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+    .btn-danger-text { color: var(--danger) !important; border-color: rgba(248,113,113,0.25) !important; }
+    .btn-share {
+      flex: 1; padding: 12px;
+      background: #0f766e; color: white;
+      border-radius: var(--radius-sm); font-size: 0.95rem; font-weight: 600;
+    }
+    .btn-row { display: flex; gap: 10px; }
+
+    /* GK toggle */
+    .gk-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
     .toggle {
-      width: 46px; height: 26px; background: #1e293b; border-radius: 13px;
+      width: 46px; height: 26px; background: var(--border-soft); border-radius: 13px;
       position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
     }
     .toggle.on { background: #7c3aed; }
     .toggle::after {
       content: ''; position: absolute; width: 20px; height: 20px;
-      background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s;
+      background: white; border-radius: 50%; top: 3px; left: 3px;
+      transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
     }
     .toggle.on::after { transform: translateX(20px); }
-    .gk-row span { font-size: 0.92rem; color: #cbd5e1; }
-    .list-stats { font-size: 0.95rem; color: #94a3b8; font-weight: 500; margin-bottom: 8px; }
-    .list-actions { display: flex; gap: 4px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
-    .hint { font-size: 0.82rem; color: #64748b; margin-bottom: 10px; }
+    .gk-row span { font-size: 0.9rem; color: var(--muted); }
+
+    /* List */
+    .list-stats {
+      font-size: 0.92rem; color: var(--muted); font-weight: 500; margin-bottom: 10px;
+    }
+    .list-stats span { color: var(--text); font-weight: 650; }
+    .list-actions { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+    .hint { font-size: 0.8rem; color: var(--faint); margin-bottom: 10px; line-height: 1.4; }
     .search-box {
-      width: 100%; padding: 11px 14px; border: none; border-radius: 10px;
-      background: #0f172a; color: #f1f5f9; font-size: 0.95rem;
+      width: 100%; padding: 11px 14px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2); color: var(--text); font-size: 0.95rem;
       margin-bottom: 12px;
     }
-    .search-box::placeholder { color: #64748b; }
-    .search-box:focus { outline: none; box-shadow: 0 0 0 2px #6366f1; }
+    .search-box::placeholder { color: var(--faint); }
+    .search-box:focus {
+      outline: none;
+      border-color: rgba(109, 116, 245, 0.55);
+      box-shadow: 0 0 0 3px rgba(109, 116, 245, 0.12);
+    }
+    .sort-row {
+      display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .sort-row label {
+      font-size: 0.72rem; color: var(--faint); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; margin: 0;
+    }
+    .sort-row select {
+      width: auto; min-width: 150px; margin-bottom: 0;
+      padding: 8px 32px 8px 12px; font-size: 0.86rem;
+    }
+
     .player-list { list-style: none; }
     .player-item {
       display: flex; align-items: center; gap: 12px;
-      padding: 12px 14px; background: #0f172a; border-radius: 12px;
-      margin-bottom: 8px; transition: opacity 0.15s;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      border: 1px solid transparent;
+      transition: opacity 0.15s, border-color 0.15s;
     }
-    .player-item.not-playing { opacity: 0.4; }
+    .player-item.not-playing { opacity: 0.38; }
     .check {
-      width: 22px; height: 22px; border-radius: 50%; border: 2px solid #475569;
-      flex-shrink: 0; cursor: pointer; display: flex; align-items: center;
-      justify-content: center; font-size: 12px; color: transparent; transition: all 0.15s;
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid var(--faint);
+      flex-shrink: 0; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: transparent; transition: all 0.15s;
     }
-    .check.on { background: #22c55e; border-color: #22c55e; color: white; }
+    .check.on {
+      background: #22c55e; border-color: #22c55e; color: white;
+      box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+    }
     .player-info { flex: 1; min-width: 0; }
     .player-name {
-      font-weight: 600; font-size: 1rem;
+      font-weight: 600; font-size: 0.98rem;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .badges { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
-    .skill-badge, .run-badge, .gk-badge {
-      padding: 3px 9px; border-radius: 20px; font-size: 0.7rem; font-weight: 700;
-      cursor: pointer; user-select: none; transition: transform 0.1s, opacity 0.15s;
+    .badges { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin-top: 5px; }
+    .skill-badge, .run-badge, .gk-badge, .pos-badge {
+      padding: 3px 9px; border-radius: 999px; font-size: 0.68rem; font-weight: 700;
+      cursor: pointer; user-select: none; transition: transform 0.1s;
     }
-    .skill-badge:active, .run-badge:active, .gk-badge:active { transform: scale(0.92); }
-    .skill-1 { background: #3f3f46; color: #d4d4d8; }       /* Alright - silver */
-    .skill-2 { background: #065f46; color: #34d399; }       /* Decent - green */
-    .skill-3 { background: #1e3a5f; color: #7dd3fc; }       /* Solid - blue */
-    .skill-4 { background: #78350f; color: #fbbf24; }       /* Quality - gold */
-    .pos-badge { background: #3b2f1e; color: #fbbf24; padding: 3px 8px; border-radius: 20px; font-size: 0.68rem; font-weight: 700; }
-    .run-badge { background: #1e3a5f; color: #7dd3fc; }
-    .run-badge.non { background: #1e293b; color: #94a3b8; }
-    .gk-badge { background: #4c1d95; color: #c4b5fd; }
-    .gk-badge.off { background: #1e293b; color: #64748b; }
+    .skill-badge:active, .run-badge:active, .gk-badge:active, .pos-badge:active { transform: scale(0.94); }
+    .skill-1 { background: #2a2f3a; color: #c8ced8; }
+    .skill-2 { background: #0b3d32; color: #34d399; }
+    .skill-3 { background: #16324f; color: #7dd3fc; }
+    .skill-4 { background: #3d2a0a; color: #fbbf24; }
+    .pos-badge { background: #2a2418; color: #e8c87a; }
+    .run-badge { background: #16324f; color: #7dd3fc; }
+    .run-badge.non { background: #1a2230; color: #8b9bb4; }
+    .gk-badge { background: #2e1a5c; color: #c4b5fd; }
+    .gk-badge.off { background: #1a2230; color: #5c6b82; }
     .remove-btn {
-      background: none; border: none; color: #64748b; font-size: 1.1rem;
-      padding: 4px 6px; cursor: pointer; line-height: 1;
+      background: none; border: none; color: var(--faint); font-size: 1.15rem;
+      padding: 6px 8px; cursor: pointer; line-height: 1; border-radius: 8px;
     }
-    .remove-btn:hover { color: #f87171; }
-    .teams-label {
-      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.6px;
-      color: #94a3b8; margin-bottom: 12px; text-transform: uppercase;
+    .remove-btn:hover { color: var(--danger); background: rgba(248,113,113,0.08); }
+
+    /* Teams */
+    #teamsContainer {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    @media (max-width: 340px) {
+      #teamsContainer { grid-template-columns: 1fr; }
     }
     .team-card {
-      background: #0f172a; border-radius: 16px; padding: 14px;
-      margin-bottom: 0; border: 1px solid #1e293b;
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid var(--border);
       min-width: 0;
     }
+    .team-a { border-top: 3px solid var(--team-a); }
+    .team-b { border-top: 3px solid var(--team-b); }
     .team-header {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
-      margin-bottom: 12px;
+      display: flex; flex-direction: column; align-items: flex-start;
+      gap: 2px; margin-bottom: 12px;
     }
     .team-title {
-      display: block;
-      font-weight: 700;
-      font-size: 1.05rem;
-      white-space: nowrap;
-      line-height: 1.3;
+      display: block; font-weight: 750; font-size: 1.05rem;
+      white-space: nowrap; line-height: 1.25;
     }
-    .team-a .team-title { color: #818cf8; }
-    .team-b .team-title { color: #34d399; }
-    .team-count {
-      font-size: 0.8rem;
-      color: #64748b;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .pts-badge {
-      display: inline-block; padding: 4px 10px; border-radius: 8px;
-      font-size: 0.78rem; font-weight: 700; margin-bottom: 12px;
-    }
-    .team-a .pts-badge { background: #312e81; color: #a5b4fc; }
-    .team-b .pts-badge { background: #064e3b; color: #6ee7b7; }
+    .team-a .team-title { color: var(--team-a); }
+    .team-b .team-title { color: var(--team-b); }
+    .team-count { font-size: 0.78rem; color: var(--faint); font-weight: 500; }
     .team-card ul { list-style: none; }
     .team-card li {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px solid #1e293b; font-size: 0.92rem; gap: 8px;
+      padding: 9px 8px; margin: 0 -4px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem; gap: 8px;
+      cursor: pointer; border-radius: 8px;
+      transition: background 0.15s;
     }
     .team-card li:last-child { border-bottom: none; }
-    .team-card .pname { font-weight: 600; }
-    .diff { text-align: center; margin-top: 8px; font-size: 0.9rem; color: #a5b4fc; }
-    .edge-note {
-      text-align: center; margin-top: 4px; font-size: 0.85rem;
-      color: #fbbf24; font-weight: 500;
-    }
-    .swap-hint {
-      text-align: center; font-size: 0.78rem; color: #64748b;
-      margin: 8px 0 4px;
-    }
+    .team-card li:active { background: rgba(255,255,255,0.04); }
     .team-card li.swap-selected {
-      background: #312e81;
-      outline: 2px solid #818cf8;
+      background: rgba(109, 116, 245, 0.18);
+      outline: 1.5px solid rgba(139, 147, 255, 0.7);
     }
-    .team-card li { cursor: pointer; border-radius: 8px; transition: background 0.15s; }
-    .team-card li:active { background: #1e293b; }
-    .sort-row {
-      display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;
+    .team-card .pname { font-weight: 600; }
+
+    .move-team-btn {
+      display: none; width: 100%; margin-top: 12px;
+      padding: 10px 12px; border-radius: 10px;
+      font-size: 0.8rem; font-weight: 600; letter-spacing: 0.2px;
+      background: transparent; transition: background 0.15s, transform 0.1s;
     }
-    .sort-row label {
-      font-size: 0.78rem; color: #64748b; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.4px; margin: 0;
+    .move-team-btn.show {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
     }
-    .sort-row select {
-      width: auto; min-width: 140px; margin-bottom: 0;
-      padding: 8px 32px 8px 12px; font-size: 0.88rem;
+    .team-a .move-team-btn {
+      border: 1.5px solid rgba(62, 207, 142, 0.55);
+      color: var(--team-b);
+      background: rgba(62, 207, 142, 0.08);
     }
-    .btn-share {
-      flex: 1; padding: 12px; background: #0d9488; color: white; border: none;
-      border-radius: 12px; font-size: 0.95rem; font-weight: 600;
+    .team-b .move-team-btn {
+      border: 1.5px solid rgba(139, 147, 255, 0.55);
+      color: var(--team-a);
+      background: rgba(139, 147, 255, 0.08);
+    }
+    .move-team-btn:active { transform: scale(0.98); }
+
+    .swap-hint {
+      text-align: center; font-size: 0.78rem; color: var(--faint);
+      margin: 4px 0 12px; line-height: 1.35;
+    }
+    .diff {
+      text-align: center; margin-top: 12px; font-size: 0.88rem;
+      color: #a5b4fc; font-weight: 500;
+    }
+    .edge-note {
+      text-align: center; margin-top: 4px; font-size: 0.82rem;
+      color: #e8c87a; font-weight: 500;
+    }
+    .swap-suggest {
+      display: none; margin-top: 12px; padding: 14px;
+      background: rgba(30, 27, 75, 0.6);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-sm); text-align: center;
+    }
+    .swap-suggest.show { display: block; }
+    .swap-suggest p {
+      font-size: 0.86rem; color: #c7d2fe; margin-bottom: 10px; line-height: 1.4;
+    }
+    .swap-suggest button {
+      padding: 10px 18px; background: var(--accent); color: white;
+      border-radius: 10px; font-size: 0.88rem; font-weight: 600;
     }
 
-    .empty { text-align: center; color: #475569; padding: 24px 0; font-size: 0.92rem; }
+    .empty { text-align: center; color: var(--faint); padding: 28px 0; font-size: 0.9rem; }
     .editing-banner {
-      background: #1e1b4b; color: #a5b4fc; font-size: 0.85rem;
-      padding: 8px 12px; border-radius: 10px; margin-bottom: 12px;
-      text-align: center; display: none;
+      background: rgba(30, 27, 75, 0.8); color: #a5b4fc; font-size: 0.84rem;
+      padding: 10px 12px; border-radius: 10px; margin-bottom: 12px;
+      text-align: center; display: none; border: 1px solid rgba(129,140,248,0.25);
     }
-    .backup-section { margin-top: 14px; padding-top: 14px; border-top: 1px solid #1e293b; }
+    .backup-section {
+      margin-top: 16px; padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
     .backup-section h3 {
-      font-size: 0.75rem; color: #64748b; margin-bottom: 10px;
-      text-transform: uppercase; letter-spacing: 0.5px;
+      font-size: 0.7rem; color: var(--faint); margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: 0.6px;
     }
-    .btn-row { display: flex; gap: 10px; }
     .hidden { display: none !important; }
     textarea {
-      width: 100%; padding: 12px; border: none; border-radius: 12px;
-      background: #0f172a; color: #f1f5f9; font-size: 0.9rem;
+      width: 100%; padding: 12px; border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface-2); color: var(--text); font-size: 0.9rem;
       min-height: 90px; margin-bottom: 10px; resize: vertical; font-family: inherit;
     }
     .toast {
       position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-      background: #22c55e; color: white; padding: 12px 20px; border-radius: 12px;
-      font-weight: 600; font-size: 0.92rem; z-index: 100;
+      background: #16a34a; color: white; padding: 12px 20px; border-radius: 12px;
+      font-weight: 600; font-size: 0.9rem; z-index: 100;
       opacity: 0; transition: opacity 0.3s; pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
     .toast.show { opacity: 1; }
     .quick-hint {
-      font-size: 0.78rem; color: #64748b; margin-top: 8px; text-align: center;
+      font-size: 0.76rem; color: var(--faint); margin-top: 10px; text-align: center;
     }
 
-    /* ---- Tablet ---- */
+    /* Tablet */
     @media (min-width: 700px) {
       body { padding: 28px 24px 56px; }
       .container { max-width: 680px; }
-      .header { margin-bottom: 32px; }
-      h1 { font-size: 1.9rem; }
-      .subtitle { max-width: 360px; font-size: 1rem; }
-      .card { padding: 22px; border-radius: 20px; }
+      .header { margin-bottom: 28px; }
+      h1 { font-size: 1.85rem; }
+      .subtitle { max-width: 380px; }
+      .card { padding: 22px; border-radius: 18px; }
       #teamsContainer { gap: 16px; }
-      .team-card { padding: 18px; }
+      .team-card { padding: 16px; }
       .player-item { padding: 14px 16px; }
-      .btn-make { max-width: 360px; margin-left: auto; margin-right: auto; }
+      .btn-make { max-width: 380px; margin-left: auto; margin-right: auto; }
     }
 
-    /* ---- Desktop / laptop ---- */
+    /* Desktop */
     @media (min-width: 1024px) {
       body { padding: 36px 32px 64px; }
       .container {
         max-width: 1040px;
         display: grid;
         grid-template-columns: minmax(300px, 360px) 1fr;
-        gap: 20px 24px;
+        gap: 18px 22px;
         align-items: start;
       }
-      .header {
-        grid-column: 1 / -1;
-        margin-bottom: 8px;
-      }
-      /* First card = Add Player (left column) */
+      .header { grid-column: 1 / -1; margin-bottom: 4px; }
       .container > .card:nth-of-type(1) {
-        grid-column: 1;
-        grid-row: 2;
-        position: sticky;
-        top: 24px;
+        grid-column: 1; grid-row: 2; position: sticky; top: 24px;
       }
-      /* Second card = Player list (right column) */
-      .container > .card:nth-of-type(2) {
-        grid-column: 2;
-        grid-row: 2;
-      }
-      /* Teams area full width below */
-      #teamsArea {
-        grid-column: 1 / -1;
-        grid-row: 3;
-      }
-      .btn-make {
-        max-width: 420px;
-        margin-left: auto;
-        margin-right: auto;
-      }
+      .container > .card:nth-of-type(2) { grid-column: 2; grid-row: 2; }
+      #teamsArea { grid-column: 1 / -1; grid-row: 3; }
+      .btn-make { max-width: 420px; margin-left: auto; margin-right: auto; }
       #teamsContainer {
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        max-width: 800px;
-        margin: 0 auto;
-      }
-      .team-card li {
-        padding: 10px 0;
-        font-size: 1rem;
+        max-width: 800px; margin: 0 auto; gap: 18px;
       }
       .player-list {
-        max-height: min(60vh, 520px);
-        overflow-y: auto;
-        padding-right: 4px;
+        max-height: min(60vh, 520px); overflow-y: auto; padding-right: 4px;
       }
     }
-
-    /* ---- Large desktop ---- */
     @media (min-width: 1280px) {
       .container { max-width: 1120px; grid-template-columns: 380px 1fr; }
       h1 { font-size: 2rem; }
     }
-
-    /* ---- Very small phones ---- */
     @media (max-width: 360px) {
-      body { padding: 14px 10px 40px; }
-      h1 { font-size: 1.45rem; }
-      .card { padding: 14px; border-radius: 14px; }
+      body { padding: 14px 12px 44px; }
+      h1 { font-size: 1.4rem; }
+      .card { padding: 14px; }
       .player-item { padding: 10px 12px; gap: 8px; }
-      .skill-badge, .run-badge, .gk-badge, .pos-badge { font-size: 0.62rem; padding: 2px 6px; }
-      .btn-small { padding: 6px 8px; font-size: 0.75rem; }
+      .skill-badge, .run-badge, .gk-badge, .pos-badge { font-size: 0.62rem; padding: 2px 7px; }
     }
-
   </style>
 </head>
 <body>
@@ -405,10 +492,14 @@
       <button class="btn-make" onclick="makeTeams()">⚡ Make Teams</button>
       <div class="card" id="result" style="display:none;">
         <div class="teams-label">Your Teams</div>
-        <p class="swap-hint" id="swapHint">Tap a name on each team to swap them</p>
+        <p class="swap-hint" id="swapHint">Tap a name, then swap with someone or move teams</p>
         <div id="teamsContainer"></div>
         <p class="diff" id="diffText"></p>
         <p class="edge-note" id="edgeNote"></p>
+        <div class="swap-suggest" id="swapSuggest">
+          <p id="swapSuggestText"></p>
+          <button type="button" onclick="applySuggestedSwap()">Apply swap</button>
+        </div>
         <div class="btn-row" style="margin-top:12px;">
           <button class="btn-secondary" onclick="makeTeams(true)">Reshuffle</button>
           <button class="btn-share" onclick="shareTeams()">Share</button>
@@ -428,6 +519,7 @@
     let currentSumA = 0;
     let currentSumB = 0;
     let swapPick = null; // { side: 'A'|'B', index: number }
+    let suggestedSwap = null; // { i, j, nameA, nameB, newDiff }
 
     try {
       const saved = localStorage.getItem('footballPlayers');
@@ -990,6 +1082,11 @@
 
     function renderTeamsUI() {
       function renderTeam(team, label, cls, side) {
+        // Show "Move to this team" when someone on the OTHER side is selected
+        const showMove = swapPick && swapPick.side !== side;
+        const moveLabel = showMove
+          ? ('Move to ' + label)
+          : '';
         return `
           <div class="team-card ${cls}">
             <div class="team-header">
@@ -1004,6 +1101,10 @@
                 </li>
               `).join('')}
             </ul>
+            <button type="button" class="move-team-btn${showMove ? ' show' : ''}"
+              onclick="event.stopPropagation(); moveSelectedTo('${side}')">
+              ${moveLabel}
+            </button>
           </div>
         `;
       }
@@ -1020,11 +1121,87 @@
       const hint = document.getElementById('swapHint');
       if (swapPick) {
         const team = swapPick.side === 'A' ? currentTeamA : currentTeamB;
-        hint.textContent = 'Selected ' + team[swapPick.index].name + ' — tap someone on the other team to swap';
+        const other = swapPick.side === 'A' ? 'Team B' : 'Team A';
+        hint.textContent = 'Selected ' + team[swapPick.index].name + ' — tap someone to swap, or Move to ' + other;
       } else {
-        hint.textContent = 'Tap a name on each team to swap them';
+        hint.textContent = 'Tap a name, then swap with someone or move teams';
       }
+
+
+      updateSwapSuggestion();
     }
+
+    function qualityCountsAfterSwap(i, j) {
+      // teamA[i] <-> teamB[j]
+      let qA = 0, qB = 0;
+      currentTeamA.forEach((p, idx) => {
+        const skill = idx === i ? currentTeamB[j].skill : p.skill;
+        if (skill === 4) qA++;
+      });
+      currentTeamB.forEach((p, idx) => {
+        const skill = idx === j ? currentTeamA[i].skill : p.skill;
+        if (skill === 4) qB++;
+      });
+      return { qA, qB };
+    }
+
+    function findBestSwap() {
+      const baseDiff = Math.abs(currentSumA - currentSumB);
+      if (baseDiff === 0) return null;
+      let best = null;
+      for (let i = 0; i < currentTeamA.length; i++) {
+        for (let j = 0; j < currentTeamB.length; j++) {
+          const newA = currentSumA - currentTeamA[i].skill + currentTeamB[j].skill;
+          const newB = currentSumB - currentTeamB[j].skill + currentTeamA[i].skill;
+          const newDiff = Math.abs(newA - newB);
+          if (newDiff >= baseDiff) continue;
+
+          // Prefer not stacking Quality
+          const { qA, qB } = qualityCountsAfterSwap(i, j);
+          if (Math.abs(qA - qB) > 1) continue;
+
+          if (!best || newDiff < best.newDiff) {
+            best = {
+              i, j,
+              nameA: currentTeamA[i].name,
+              nameB: currentTeamB[j].name,
+              newDiff,
+              oldDiff: baseDiff
+            };
+          }
+        }
+      }
+      return best;
+    }
+
+    function updateSwapSuggestion() {
+      const box = document.getElementById('swapSuggest');
+      const label = document.getElementById('swapSuggestText');
+      suggestedSwap = findBestSwap();
+      if (!suggestedSwap) {
+        box.classList.remove('show');
+        return;
+      }
+      label.textContent =
+        'Try swapping ' + suggestedSwap.nameA + ' ↔ ' + suggestedSwap.nameB +
+        ' (diff ' + suggestedSwap.oldDiff + ' → ' + suggestedSwap.newDiff + ')';
+      box.classList.add('show');
+    }
+
+    function applySuggestedSwap() {
+      if (!suggestedSwap) return;
+      const { i, j } = suggestedSwap;
+      const temp = currentTeamA[i];
+      currentTeamA[i] = currentTeamB[j];
+      currentTeamB[j] = temp;
+      currentSumA = currentTeamA.reduce((s, p) => s + p.skill, 0);
+      currentSumB = currentTeamB.reduce((s, p) => s + p.skill, 0);
+      swapPick = null;
+      suggestedSwap = null;
+      renderTeamsUI();
+      showToast('Swap applied');
+    }
+
 
     function pickSwap(side, index) {
       if (!swapPick) {
@@ -1034,11 +1211,16 @@
       }
       // Same side: change selection
       if (swapPick.side === side) {
-        swapPick = { side, index };
+        if (swapPick.index === index) {
+          // tap again to deselect
+          swapPick = null;
+        } else {
+          swapPick = { side, index };
+        }
         renderTeamsUI();
         return;
       }
-      // Different sides: swap
+      // Different sides: swap the two players
       const teamFrom = swapPick.side === 'A' ? currentTeamA : currentTeamB;
       const teamTo = side === 'A' ? currentTeamA : currentTeamB;
       const i = swapPick.index;
@@ -1051,6 +1233,30 @@
       swapPick = null;
       renderTeamsUI();
       showToast('Swapped');
+    }
+
+    function moveSelectedTo(targetSide) {
+      if (!swapPick) return;
+      if (swapPick.side === targetSide) return;
+      const from = swapPick.side === 'A' ? currentTeamA : currentTeamB;
+      const to = targetSide === 'A' ? currentTeamA : currentTeamB;
+      if (from.length <= 1) {
+        showToast('A team needs at least 1 player');
+        return;
+      }
+      const idx = swapPick.index;
+      if (idx < 0 || idx >= from.length) {
+        swapPick = null;
+        renderTeamsUI();
+        return;
+      }
+      const [player] = from.splice(idx, 1);
+      to.push(player);
+      currentSumA = currentTeamA.reduce((s, p) => s + p.skill, 0);
+      currentSumB = currentTeamB.reduce((s, p) => s + p.skill, 0);
+      swapPick = null;
+      renderTeamsUI();
+      showToast(player.name + ' → ' + (targetSide === 'A' ? 'Team A' : 'Team B'));
     }
 
     function buildShareText() {
@@ -1172,7 +1378,7 @@
       const text = buildShareText();
       const canvas = drawTeamsImage();
 
-      // Try share image (looks like the app)
+      // Prefer sharing the image via the system sheet (no download)
       try {
         const blob = await new Promise((resolve, reject) => {
           canvas.toBlob(b => b ? resolve(b) : reject(new Error('blob failed')), 'image/png');
@@ -1190,7 +1396,6 @@
         }
 
         if (navigator.share) {
-          // Some phones share image via share without canShare check
           try {
             await navigator.share({ files: [file], title: 'Fair Teams' });
             showToast('Shared');
@@ -1198,30 +1403,27 @@
           } catch (e) {
             if (e && e.name === 'AbortError') return;
           }
+          // Share text only via sheet
+          try {
+            await navigator.share({ title: 'Fair Teams', text });
+            showToast('Shared');
+            return;
+          } catch (e2) {
+            if (e2 && e2.name === 'AbortError') return;
+          }
         }
       } catch (e) {
-        // fall through to text / download
+        // fall through to copy text only
       }
 
-      // Fallback: download image + copy text
-      try {
-        const url = canvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'fair-teams.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        showToast('Image saved — share it in WhatsApp');
-      } catch (e) {}
-
+      // Fallback: copy text only (no image download)
       copyShare(text);
     }
 
     function copyShare(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => {
-          showToast('Text copied too');
+          showToast('Copied — paste into WhatsApp');
         }).catch(() => fallbackShare(text));
       } else {
         fallbackShare(text);
